@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="article-wrap">
+  <div class="wrap" style="padding:0;">
+    <div class="breadcrumb" id="breadcrumb-slot"><a href="index.html">← Back to Home</a></div>
+    <div id="article-root"><!-- filled by JS --></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav();
+  initTopNav();
+
+  const id = new URLSearchParams(location.search).get('id');
+  const root = document.getElementById('article-root');
+  const TYPE_LABEL = { news: 'News', announcement: 'Announcement', event: 'Event', media: 'Campus Media' };
+  const TYPE_BACK = { news: 'news.html', announcement: 'news.html', event: 'events.html', media: 'media.html' };
+
+  async function render(){
+    const post = await SM.getPost(id);
+    if (!post){
+      root.innerHTML = `<div class="empty"><div class="glyph">🕵️</div><p>This post isn't around anymore.</p></div>`;
+      return;
+    }
+
+    document.getElementById('breadcrumb-slot').innerHTML =
+      `<a href="${TYPE_BACK[post.type] || 'index.html'}">← Back to ${TYPE_LABEL[post.type] || 'Home'}</a>`;
+    document.title = post.title + ' — Summit Hub';
+
+    const author = await SM.getUser(post.authorId);
+    const me = SM.currentUser();
+    const isOwner = me && me.id === post.authorId;
+
+    let eventBlock = '';
+    if (post.type === 'event' && post.eventDate){
+      const d = new Date(post.eventDate);
+      const rsvp = await SM.getRsvpInfo(post.id, me ? me.id : null);
+      const isFuture = d.getTime() > Date.now();
+      eventBlock = `
+        <div class="panel" style="margin-top:20px;">
+          <div class="event-meta" style="font-size:0.88rem;">
+            <span>🗓️ ${d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' })}</span>
+            <span>🕒 ${d.toLocaleString('en-US', { hour:'numeric', minute:'2-digit', hour12:true })}</span>
+            ${post.eventLocation ? `<span>📍 ${post.eventLocation}</span>` : ''}
+          </div>
+          <div style="margin-top:10px; font-size:0.88rem; color:var(--text-dim);">👥 ${rsvp.count} going</div>
+          ${isFuture ? `<button class="rsvp-btn ${rsvp.iAmGoing ? 'going' : ''}" id="rsvp-btn" data-going="${rsvp.iAmGoing}" style="margin-top:12px;">${rsvp.iAmGoing ? "✓ You're going" : "I'm going"}</button>` : ''}
+        </div>`;
+    }
+
+    root.innerHTML = `
+      <span class="type-badge ${post.type}">${TYPE_LABEL[post.type]}</span>
+      <h1 style="margin-top:10px; font-size:1.8rem;">${post.title}</h1>
+      <div class="article-meta">
+        <span class="dot-avatar" style="width:22px;height:22px;">${author ? (author.avatarUrl ? `<img src="${author.avatarUrl}" alt="">` : author.initials) : '?'}</span>
+        <span>${author ? author.name : 'Unknown'}</span>
+        <span>·</span>
+        <span>${SM.timeAgo(post.createdAt)}</span>
+      </div>
+      ${post.imageUrl ? `<div class="article-hero"><img src="${post.imageUrl}" alt=""></div>` : ''}
+      ${post.body ? `<div class="article-body">${post.body}</div>` : ''}
+      ${eventBlock}
+      ${isOwner ? `<button class="btn btn-outline clay" id="delete-btn" style="margin-top:20px;">Delete this post</button>` : ''}
+    `;
+
+    const rsvpBtn = document.getElementById('rsvp-btn');
+    if (rsvpBtn){
+      rsvpBtn.addEventListener('click', async () => {
+        const user = SM.currentUser();
+        if (!user){ SM.redirectToAuth(); return; }
+        rsvpBtn.disabled = true;
+        try{
+          await SM.toggleRsvp(post.id, user.id, rsvpBtn.dataset.going === 'true');
+          render();
+        }catch(err){
+          SM.toast(err.message || 'Could not update RSVP', true);
+          rsvpBtn.disabled = false;
+        }
+      });
+    }
+
+    const deleteBtn = document.getElementById('delete-btn');
+    if (deleteBtn){
+      deleteBtn.addEventListener('click', async () => {
+        if (!confirm('Delete this post? This can\'t be undone.')) return;
+        try{
+          await SM.deletePost(post.id);
+          window.location.href = TYPE_BACK[post.type] || 'index.html';
+        }catch(err){
+          SM.toast(err.message || 'Could not delete post', true);
+        }
+      });
+    }
+  }
+
+  render();
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

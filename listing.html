@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listing</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html" class="active">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html" class="active">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="listing-wrap">
+  <div class="wrap">
+    <div class="breadcrumb"><a href="market.html">← Back to the market</a></div>
+    <div class="listing-grid" id="listing-root"><!-- filled by JS --></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav('market');
+  initTopNav();
+
+  const id = new URLSearchParams(location.search).get('id');
+  const root = document.getElementById('listing-root');
+
+  async function render(){
+    const listing = await SM.getListing(id);
+
+    if (!listing){
+      root.innerHTML = `<div class="empty" style="grid-column:1/-1;"><div class="glyph">🕵️</div><p>This listing isn't around anymore.</p></div>`;
+      return;
+    }
+
+    const seller = await SM.getUser(listing.sellerId);
+    const me = SM.currentUser();
+    const isOwner = me && me.id === listing.sellerId;
+    const thumb = listing.imageUrl ? `<img src="${listing.imageUrl}" alt="">` : (listing.glyph || '🛍️');
+
+    root.innerHTML = `
+      <div>
+        <div class="hero-thumb">${thumb}</div>
+        <div class="price-row">
+          <span class="price">${SM.money(listing.price)}</span>
+          <span class="status-note ${listing.status}">${listing.status === 'sold' ? 'Sold' : 'Available'}</span>
+        </div>
+        <span class="cat" style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--emerald);text-transform:uppercase;">${listing.category}</span>
+        <h1 style="margin-top:6px;font-size:1.7rem;">${listing.title}</h1>
+        <p style="line-height:1.65; color:var(--text-dim); margin-top:14px;">${listing.desc}</p>
+        <p style="font-size:0.8rem; color:var(--text-dim); margin-top:10px;">Posted ${SM.timeAgo(listing.createdAt)}</p>
+      </div>
+
+      <div class="panel">
+        <div class="seller-card">
+          <div class="dot-avatar-lg">${seller ? (seller.avatarUrl ? `<img src="${seller.avatarUrl}" alt="">` : seller.initials) : '?'}</div>
+          <div>
+            <h3 style="font-size:1.05rem;">${seller ? seller.name : 'Unknown seller'}</h3>
+            <p style="font-size:0.82rem; color:var(--text-dim); margin:2px 0 0;">${seller ? seller.dept : ''}</p>
+            ${seller && seller.bio ? `<p style="font-size:0.85rem; margin-top:8px; line-height:1.5;">${seller.bio}</p>` : ''}
+          </div>
+        </div>
+
+        <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+          ${isOwner
+            ? `<a href="dashboard.html" class="btn btn-dark btn-block">Manage this listing</a>`
+            : listing.status === 'sold'
+              ? `<button class="btn btn-outline btn-block" disabled>This item has been sold</button>`
+              : `<button class="btn btn-primary btn-block" id="msg-seller-btn">💬 Message seller</button>`
+          }
+        </div>
+      </div>
+    `;
+
+    const msgBtn = document.getElementById('msg-seller-btn');
+    if (msgBtn){
+      msgBtn.addEventListener('click', async () => {
+        const user = SM.currentUser();
+        if (!user){ window.location.href = 'auth.html'; return; }
+        const thread = await SM.getOrCreateThread(listing.id, listing.title, user.id, listing.sellerId);
+        window.location.href = `chat.html?thread=${thread.id}`;
+      });
+    }
+  }
+
+  render();
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

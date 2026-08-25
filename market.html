@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Market — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html" class="active">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html" class="active">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Student Marketplace</div>
+    <h1>What's on the board today.</h1>
+    <p>Buy, sell and swap with people on campus — gadgets, food, thrift, notes, hustle services. Chat with the seller before you commit.</p>
+
+    <div class="searchbar">
+      <input type="text" id="search-input" placeholder="Search listings — “laptop”, “jollof”, “ACC 201”…">
+    </div>
+    <div class="chips" id="category-chips"></div>
+  </div>
+</header>
+
+<main class="feed-section">
+  <div class="wrap">
+    <div class="feed-heading">
+      <h2 style="font-size:1.3rem;">Latest posts</h2>
+      <span class="count" id="result-count"></span>
+    </div>
+    <div class="feed" id="feed-grid"></div>
+    <div class="empty" id="empty-state" style="display:none;">
+      <div class="glyph">📭</div>
+      <p>Nothing matches that search yet. Try a different word or category.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav('market');
+  initTopNav();
+
+  let activeCategory = 'All';
+  let query = '';
+  let allListings = [];
+  const sellerCache = {};
+
+  function renderChips(){
+    const cats = ['All', ...SM.CATEGORIES];
+    const wrap = document.getElementById('category-chips');
+    wrap.innerHTML = cats.map(c =>
+      `<button class="chip ${c===activeCategory?'active':''}" data-cat="${c}" style="border:1px solid; background:none;">${c}</button>`
+    ).join('');
+    wrap.querySelectorAll('.chip').forEach(el => {
+      el.addEventListener('click', () => {
+        activeCategory = el.dataset.cat;
+        renderChips();
+        renderFeed();
+      });
+    });
+  }
+
+  async function sellerFor(id){
+    if (!sellerCache[id]) sellerCache[id] = await SM.getUser(id);
+    return sellerCache[id];
+  }
+
+  async function renderFeed(){
+    const filtered = allListings.filter(l => {
+      const matchesCat = activeCategory === 'All' || l.category === activeCategory;
+      const matchesQuery = !query || (l.title + ' ' + l.desc).toLowerCase().includes(query.toLowerCase());
+      return matchesCat && matchesQuery;
+    });
+
+    document.getElementById('result-count').textContent = filtered.length + (filtered.length===1 ? ' listing' : ' listings');
+    const grid = document.getElementById('feed-grid');
+    const empty = document.getElementById('empty-state');
+
+    if (!filtered.length){
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    const cards = await Promise.all(filtered.map(async (l) => {
+      const seller = await sellerFor(l.sellerId);
+      const thumb = l.imageUrl ? `<img src="${l.imageUrl}" alt="">` : (l.glyph || '🛍️');
+      return `
+      <a class="card" href="listing.html?id=${l.id}">
+        <div class="thumb">
+          ${thumb}
+          <span class="tag ${l.status==='sold'?'sold':''}">${l.status==='sold' ? 'SOLD' : SM.money(l.price)}</span>
+        </div>
+        <div class="body">
+          <span class="cat">${l.category}</span>
+          <h3>${l.title}</h3>
+          <p class="excerpt">${l.desc}</p>
+          <div class="meta">
+            <span class="seller">
+              <span class="dot-avatar">${seller ? (seller.avatarUrl ? `<img src="${seller.avatarUrl}" alt="">` : seller.initials) : '?'}</span>
+              ${seller ? seller.name.split(' ')[0] : 'Unknown'}
+            </span>
+            <span>${SM.timeAgo(l.createdAt)}</span>
+          </div>
+        </div>
+      </a>`;
+    }));
+    grid.innerHTML = cards.join('');
+  }
+
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    query = e.target.value;
+    renderFeed();
+  });
+
+  renderChips();
+  SM.listenListings((listings) => {
+    allListings = listings;
+    renderFeed();
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

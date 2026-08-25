@@ -1,0 +1,17 @@
+# Reference only — your Worker is already deployed via the Cloudflare
+# dashboard. This file is only needed if you ever want to redeploy via
+# `npx wrangler deploy` instead.
+
+name = "summit-market-uploads"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+[[r2_buckets]]
+binding = "LISTINGS_BUCKET"
+bucket_name = "summit-market-listings"
+
+[vars]
+SUPABASE_URL = "https://skshtnrsugkdrhscftzt.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_khIRUUx-oLXuyJPTK_wMpg_KhyMc8Gb"
+PUBLIC_R2_URL = "https://pub-xxxxxxxxxxxxxxxx.r2.dev"
+ALLOWED_ORIGIN = "*"

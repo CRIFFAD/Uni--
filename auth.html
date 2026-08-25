@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="auth-wrap">
+  <div class="panel auth-panel">
+    <div class="logo-badge"><img src="./assets/new-logo_2-removebg-preview.png" alt="Summit Hub"></div>
+    <div class="eyebrow" style="font-family:'IBM Plex Mono',monospace;color:var(--emerald);font-size:0.75rem;text-transform:uppercase;margin-bottom:8px;text-align:center;">Summit University students only</div>
+    <h1 style="text-align:center;">Welcome to Uni𝕏</h1>
+    <p class="sub" style="text-align:center;">Log in or create your account with your campus email.</p>
+
+    <div class="tabs">
+      <button type="button" id="tab-login" class="active">Log in</button>
+      <button type="button" id="tab-signup">Sign up</button>
+    </div>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="login-email">Campus email</label>
+        <input type="email" id="login-email" placeholder="yourname@summit.edu.ng" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" required>
+      </div>
+      <div class="field error" id="login-error" style="display:none;"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-submit">Log in</button>
+    </form>
+
+    <form id="signup-form" style="display:none;">
+      <div class="field">
+        <label for="signup-name">Full name</label>
+        <input type="text" id="signup-name" placeholder="e.g. Crif Fad" required>
+      </div>
+      <div class="field">
+        <label for="signup-dept">Department</label>
+        <input type="text" id="signup-dept" placeholder="e.g. Computer Science">
+      </div>
+      <div class="field">
+        <label for="signup-email">Campus email</label>
+        <input type="email" id="signup-email" placeholder="yourname@summit.edu.ng" required>
+      </div>
+      <div class="field">
+        <label for="signup-password">Password</label>
+        <input type="password" id="signup-password" placeholder="At least 6 characters" required minlength="6">
+      </div>
+      <div class="field error" id="signup-error" style="display:none;"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="signup-submit">Create account</button>
+    </form>
+  </div>
+</main>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module">
+  initTopNav();
+  SM.onAuthChange((user) => {
+    if (user) window.location.href = 'index.html';
+  });
+
+  const tabLogin = document.getElementById('tab-login');
+  const tabSignup = document.getElementById('tab-signup');
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+
+  tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active'); tabSignup.classList.remove('active');
+    loginForm.style.display = 'block'; signupForm.style.display = 'none';
+  });
+  tabSignup.addEventListener('click', () => {
+    tabSignup.classList.add('active'); tabLogin.classList.remove('active');
+    signupForm.style.display = 'block'; loginForm.style.display = 'none';
+  });
+
+  function showError(el, message){ el.textContent = message; el.style.display = 'block'; }
+  function hideError(el){ el.style.display = 'none'; }
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('login-error');
+    hideError(errEl);
+    const btn = document.getElementById('login-submit');
+    btn.disabled = true; btn.textContent = 'Logging in…';
+    try{
+      await SM.logIn({
+        email: document.getElementById('login-email').value.trim(),
+        password: document.getElementById('login-password').value
+      });
+      window.location.href = 'index.html';
+    }catch(err){
+      showError(errEl, friendlyError(err));
+      btn.disabled = false; btn.textContent = 'Log in';
+    }
+  });
+
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('signup-error');
+    hideError(errEl);
+    const btn = document.getElementById('signup-submit');
+    btn.disabled = true; btn.textContent = 'Creating account…';
+    try{
+      await SM.signUp({
+        name: document.getElementById('signup-name').value.trim(),
+        dept: document.getElementById('signup-dept').value.trim(),
+        email: document.getElementById('signup-email').value.trim(),
+        password: document.getElementById('signup-password').value
+      });
+      window.location.href = 'index.html';
+    }catch(err){
+      showError(errEl, friendlyError(err));
+      btn.disabled = false; btn.textContent = 'Create account';
+    }
+  });
+
+  function friendlyError(err){
+    const msg = err.message || '';
+    if (msg.includes('sign up with one of these')) return msg;
+    if (msg.includes('User already registered')) return 'That email already has an account — try logging in instead.';
+    if (msg.toLowerCase().includes('invalid login credentials')) return 'Incorrect email or password.';
+    if (msg.toLowerCase().includes('password') && msg.toLowerCase().includes('least')) return 'Password should be at least 6 characters.';
+    if (msg.toLowerCase().includes('unable to validate email') || msg.toLowerCase().includes('invalid email')) return 'That email address looks invalid.';
+    if (msg.toLowerCase().includes('email not confirmed')) return 'Please confirm your email first — check your inbox for the confirmation link.';
+    if (msg.toLowerCase().includes('failed to fetch')) return 'Could not reach Supabase — check your connection.';
+    return msg || 'Something went wrong. Please try again.';
+  }
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>News & Announcements</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="UniHub logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html" class="active">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Campus Hub">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html" class="active">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<header class="masthead home-hero">
+  <div class="wrap">
+    <div class="eyebrow">Campus Hub</div>
+    <h1>News &amp; announcements</h1>
+    <p>Official updates and campus news, straight from your fellow students and organizations.</p>
+    <div class="chips" id="type-chips"></div>
+  </div>
+</header>
+
+<main class="feed-section">
+  <div class="wrap">
+    <div class="feed-heading">
+      <h2 style="font-size:1.3rem;">Posts</h2>
+      <span class="count" id="result-count"></span>
+    </div>
+    <div class="feed" id="news-grid"></div>
+    <div class="empty" id="empty-state" style="display:none;">
+      <div class="glyph">📭</div>
+      <p>Nothing here yet. Be the first to post.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav();
+  initTopNav();
+
+  let activeFilter = 'All';
+  let allPosts = [];
+
+  function renderChips(){
+    const cats = ['All', 'News', 'Announcements'];
+    const wrap = document.getElementById('type-chips');
+    wrap.innerHTML = cats.map(c =>
+      `<button class="chip ${c===activeFilter?'active':''}" data-cat="${c}" style="border:1px solid; background:none;">${c}</button>`
+    ).join('');
+    wrap.querySelectorAll('.chip').forEach(el => {
+      el.addEventListener('click', () => {
+        activeFilter = el.dataset.cat;
+        renderChips();
+        renderGrid();
+      });
+    });
+  }
+
+  function renderGrid(){
+    const filtered = allPosts.filter(p => {
+      if (activeFilter === 'News') return p.type === 'news';
+      if (activeFilter === 'Announcements') return p.type === 'announcement';
+      return true;
+    });
+
+    document.getElementById('result-count').textContent = filtered.length + (filtered.length===1 ? ' post' : ' posts');
+    const grid = document.getElementById('news-grid');
+    const empty = document.getElementById('empty-state');
+
+    if (!filtered.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+
+    grid.innerHTML = filtered.map(p => `
+      <a class="card post-card" href="article.html?id=${p.id}">
+        <div class="thumb">
+          ${p.imageUrl ? `<img src="${p.imageUrl}" alt="">` : (p.type === 'news' ? '📰' : '📣')}
+          <span class="type-badge ${p.type}">${p.type === 'news' ? 'News' : 'Announcement'}</span>
+        </div>
+        <div class="body">
+          <h3>${p.title}</h3>
+          <p class="excerpt">${p.body || ''}</p>
+          <div class="meta"><span>${SM.timeAgo(p.createdAt)}</span></div>
+        </div>
+      </a>`).join('');
+  }
+
+  renderChips();
+  SM.listenPosts(['news','announcement'], (posts) => {
+    allPosts = posts;
+    renderGrid();
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

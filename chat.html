@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body style="--list-display:block; --conv-display:none;">
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html" class="active">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Campus Hub">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html" class="active">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="chat-shell">
+  <div class="wrap">
+    <h1 style="font-size:1.4rem; margin-bottom:16px;">Messages</h1>
+    <div class="chat-grid">
+      <div class="thread-list" id="thread-list"></div>
+      <div class="conversation" id="conversation">
+        <div class="empty" style="margin:auto;">
+          <div class="glyph">💬</div>
+          <p>Pick a conversation to see messages.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav('market');
+  initTopNav();
+
+  let user = null;
+  let activeThreadId = new URLSearchParams(location.search).get('thread');
+  let threadsCache = [];
+  let msgUnsub = null;
+  const otherCache = {};
+
+  SM.onAuthChange((u) => {
+    if (!u){ SM.redirectToAuth(); return; }
+    user = u;
+    if (activeThreadId){
+      document.body.style.setProperty('--list-display','none');
+      document.body.style.setProperty('--conv-display','flex');
+    }
+    SM.listenThreads(user.id, async (threads) => {
+      threadsCache = threads;
+      await renderThreadList();
+      if (activeThreadId) openThread(activeThreadId, false);
+    });
+  });
+
+  async function otherPartyFor(thread){
+    const otherId = thread.buyerId === user.id ? thread.sellerId : thread.buyerId;
+    if (!otherCache[otherId]) otherCache[otherId] = await SM.getUser(otherId);
+    return otherCache[otherId];
+  }
+
+  async function renderThreadList(){
+    const listEl = document.getElementById('thread-list');
+    if (!threadsCache.length){
+      listEl.innerHTML = `<div class="empty"><div class="glyph">🗂️</div><p style="font-size:0.85rem;">No conversations yet. Message a seller from a listing to start one.</p></div>`;
+      return;
+    }
+
+    const rows = await Promise.all(threadsCache.map(async (t) => {
+      const other = await otherPartyFor(t);
+      return `
+        <div class="thread-item ${t.id===activeThreadId?'active':''}" data-id="${t.id}">
+          <div class="dot-avatar">${other ? (other.avatarUrl ? `<img src="${other.avatarUrl}" alt="">` : other.initials) : '?'}</div>
+          <div class="ti-main">
+            <h4>${other ? other.name : 'Unknown'}</h4>
+            <div class="ti-listing">${t.listingTitle || 'Listing'}</div>
+            <div class="ti-last">${t.lastMessage || 'Say hello 👋'}</div>
+          </div>
+        </div>`;
+    }));
+    listEl.innerHTML = rows.join('');
+
+    listEl.querySelectorAll('.thread-item').forEach(el => {
+      el.addEventListener('click', () => openThread(el.dataset.id, true));
+    });
+  }
+
+  function openThread(threadId, updateUrl){
+    activeThreadId = threadId;
+    if (updateUrl) history.replaceState(null, '', `chat.html?thread=${threadId}`);
+    document.body.style.setProperty('--list-display','none');
+    document.body.style.setProperty('--conv-display','flex');
+    renderThreadList();
+    renderConversation();
+  }
+
+  async function renderConversation(){
+    if (msgUnsub){ msgUnsub(); msgUnsub = null; }
+    const convEl = document.getElementById('conversation');
+    const thread = threadsCache.find(t => t.id === activeThreadId) || await SM.getThread(activeThreadId);
+
+    if (!thread){
+      convEl.innerHTML = `<div class="empty" style="margin:auto;"><div class="glyph">💬</div><p>Pick a conversation to see messages.</p></div>`;
+      return;
+    }
+
+    const other = await otherPartyFor(thread);
+
+    convEl.innerHTML = `
+      <div class="conv-header">
+        <button class="back-btn" id="back-btn">←</button>
+        <div class="dot-avatar" style="width:32px;height:32px;">${other ? (other.avatarUrl ? `<img src="${other.avatarUrl}" alt="">` : other.initials) : '?'}</div>
+        <div>
+          <div style="font-weight:600; font-size:0.9rem;">${other ? other.name : 'Unknown'}</div>
+          <div style="font-size:0.76rem; color:var(--text-dim);">${thread.listingTitle || 'Listing'}</div>
+        </div>
+      </div>
+      <div class="conv-messages" id="conv-messages"></div>
+      <form class="conv-input" id="conv-form">
+        <input type="text" id="conv-text" placeholder="Type a message…" autocomplete="off" required>
+        <button type="submit">Send</button>
+      </form>
+    `;
+
+    document.getElementById('back-btn').addEventListener('click', () => {
+      document.body.style.setProperty('--list-display','block');
+      document.body.style.setProperty('--conv-display','none');
+    });
+
+    msgUnsub = SM.listenMessages(thread.id, (messages) => {
+      const msgsEl = document.getElementById('conv-messages');
+      if (!msgsEl) return;
+      msgsEl.innerHTML = messages.length
+        ? messages.map(m => `
+            <div class="msg ${m.from===user.id?'mine':'theirs'}">
+              ${m.text}
+              <span class="ts">${SM.timeAgo(m.ts)}</span>
+            </div>`).join('')
+        : `<div class="empty" style="margin:auto;"><p style="font-size:0.85rem;">No messages yet — say hello 👋</p></div>`;
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    });
+
+    document.getElementById('conv-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('conv-text');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      await SM.sendMessage(thread.id, user.id, text);
+    });
+  }
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

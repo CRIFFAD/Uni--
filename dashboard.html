@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My listings — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="UniHub logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html" class="active">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html" class="active">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="dash-wrap">
+  <div class="wrap">
+    <div class="feed-heading">
+      <h1 style="font-size:1.5rem;">My listings</h1>
+      <a href="post.html" class="pill-btn" style="background:var(--ink); color:#fff;">+ Post new</a>
+    </div>
+    <div id="my-listings"></div>
+    <div class="empty" id="empty-state" style="display:none;">
+      <div class="glyph">🗒️</div>
+      <p>You haven't posted anything yet.</p>
+      <a href="post.html" class="btn btn-primary" style="margin-top:12px;">Post your first listing</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav('market');
+  initTopNav();
+
+  SM.onAuthChange((user) => {
+    if (!user){ SM.redirectToAuth(); return; }
+    SM.listenListingsBySeller(user.id, render);
+  });
+
+  function render(mine){
+    const wrap = document.getElementById('my-listings');
+    const empty = document.getElementById('empty-state');
+
+    if (!mine.length){ wrap.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+
+    wrap.innerHTML = mine.map(l => `
+      <div class="row-card">
+        <div class="row-thumb">${l.imageUrl ? `<img src="${l.imageUrl}" alt="">` : (l.glyph || '🛍️')}</div>
+        <div class="row-main">
+          <h3>${l.title}</h3>
+          <div class="sub">${SM.money(l.price)} · ${l.category} · posted ${SM.timeAgo(l.createdAt)}</div>
+        </div>
+        <div class="row-actions">
+          <select class="status-select" data-id="${l.id}">
+            <option value="available" ${l.status==='available'?'selected':''}>Available</option>
+            <option value="sold" ${l.status==='sold'?'selected':''}>Sold</option>
+          </select>
+          <a href="listing.html?id=${l.id}" class="btn btn-outline">View</a>
+          <button class="btn btn-outline clay" data-del="${l.id}">Delete</button>
+        </div>
+      </div>
+    `).join('');
+
+    wrap.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        await SM.updateListing(sel.dataset.id, { status: sel.value });
+        SM.toast('Status updated');
+      });
+    });
+    wrap.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Delete this listing? This can\'t be undone.')){
+          await SM.deleteListing(btn.dataset.del);
+          SM.toast('Listing deleted');
+        }
+      });
+    });
+  }
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

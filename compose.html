@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create a post </title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="UniHub logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Campus Hub">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="compose-wrap wrap">
+  <h1 style="font-size:1.7rem; margin-bottom:6px;">Share something with campus</h1>
+  <p style="color:var(--text-dim); font-size:0.9rem; margin-bottom:24px;">Pick what kind of post this is, then fill in the details.</p>
+
+  <div class="type-picker" id="type-picker">
+    <button type="button" class="type-chip active" data-type="news"><span class="emoji">📰</span>News</button>
+    <button type="button" class="type-chip" data-type="announcement"><span class="emoji">📣</span>Announcement</button>
+    <button type="button" class="type-chip" data-type="event"><span class="emoji">📅</span>Event</button>
+    <button type="button" class="type-chip" data-type="media"><span class="emoji">📸</span>Media</button>
+  </div>
+
+  <form id="compose-form" class="chalkboard">
+    <div class="field">
+      <label for="title">Title</label>
+      <input type="text" id="title" placeholder="e.g. IFF extends exam-week hours" required>
+    </div>
+
+    <div class="field">
+      <label for="body" id="body-label">What's this about?</label>
+      <textarea id="body" placeholder="Add the details..."></textarea>
+    </div>
+
+    <div id="event-fields" style="display:none;">
+      <div class="field">
+        <label for="event-date">Date &amp; time</label>
+        <input type="datetime-local" id="event-date">
+      </div>
+      <div class="field">
+        <label for="event-location">Location</label>
+        <input type="text" id="event-location" placeholder="e.g. Adiat Hall">
+      </div>
+    </div>
+
+    <div class="field" id="pin-field" style="display:none;">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:400;">
+        <input type="checkbox" id="pinned" style="width:auto;">
+        Pin this to the top of the announcements banner on Home
+      </label>
+    </div>
+
+    <div class="field">
+      <label for="photo" id="photo-label">Photo (optional)</label>
+      <input type="file" id="photo" accept="image/*">
+      <img id="photo-preview" class="photo-preview">
+      <div class="hint">Photos are automatically resized and compressed before upload.</div>
+    </div>
+
+    <div class="field error" id="compose-error" style="display:none;"></div>
+    <button type="submit" class="btn btn-primary btn-block" id="compose-submit">Publish post</button>
+  </form>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  import { compressImage } from './js/image-utils.js';
+
+  renderNav();
+  initTopNav();
+
+  let user = null;
+  let selectedType = 'news';
+  const BODY_LABEL = {
+    news: "What's this about?",
+    announcement: "What do students need to know?",
+    event: "Tell people what to expect",
+    media: "Caption (optional)"
+  };
+  const picker = document.getElementById('type-picker');
+
+  function selectType(type){
+    selectedType = type;
+    picker.querySelectorAll('.type-chip').forEach(c => c.classList.toggle('active', c.dataset.type === type));
+    document.getElementById('event-fields').style.display = type === 'event' ? 'block' : 'none';
+    document.getElementById('pin-field').style.display = type === 'announcement' ? 'block' : 'none';
+    document.getElementById('body-label').textContent = BODY_LABEL[type];
+    document.getElementById('event-date').required = type === 'event';
+  }
+
+  SM.onAuthChange((u) => {
+    if (!u){ SM.redirectToAuth(); return; }
+    user = u;
+
+    const canPostOfficial = u.role === 'staff' || u.role === 'admin';
+    if (!canPostOfficial){
+      picker.querySelector('[data-type="news"]').style.display = 'none';
+      picker.querySelector('[data-type="announcement"]').style.display = 'none';
+      const notice = document.createElement('p');
+      // notice.style.cssText = 'font-size:0.8rem; color:var(--text-dim); margin:-14px 0 22px;';
+      // notice.textContent = 'News and Announcements can only be posted by Uni𝕏 staff accounts.';
+      // picker.after(notice);
+      selectType('event');
+    }
+  });
+
+  picker.querySelectorAll('.type-chip').forEach(chip => {
+    chip.addEventListener('click', () => selectType(chip.dataset.type));
+  });
+
+  const photoInput = document.getElementById('photo');
+  const preview = document.getElementById('photo-preview');
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    if (!file){ preview.style.display = 'none'; return; }
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  });
+
+  document.getElementById('compose-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!user){ SM.redirectToAuth(); return; }
+    const errEl = document.getElementById('compose-error');
+    errEl.style.display = 'none';
+    const btn = document.getElementById('compose-submit');
+    btn.disabled = true;
+
+    try{
+      let imageFile = photoInput.files[0] || null;
+      if (imageFile){
+        btn.textContent = 'Compressing photo…';
+        imageFile = await compressImage(imageFile);
+      }
+
+      btn.textContent = 'Publishing…';
+      const eventDateVal = document.getElementById('event-date').value;
+      const post = await SM.addPost({
+        type: selectedType,
+        title: document.getElementById('title').value.trim(),
+        body: document.getElementById('body').value.trim(),
+        imageFile,
+        pinned: selectedType === 'announcement' && document.getElementById('pinned').checked,
+        eventDate: selectedType === 'event' && eventDateVal ? new Date(eventDateVal).toISOString() : null,
+        eventLocation: selectedType === 'event' ? document.getElementById('event-location').value.trim() : null
+      }, user.id);
+
+      SM.toast('Posted');
+      window.location.href = `article.html?id=${post.id}`;
+    }catch(err){
+      errEl.textContent = err.message || 'Could not publish — please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Publish post';
+    }
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

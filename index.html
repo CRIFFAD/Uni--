@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uni𝕏 ✹ News, Events, and the Campus Market</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="UniHub logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html" class="active">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html" class="active">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<header class="masthead home-hero">
+  <div class="wrap">
+    <div class="eyebrow">Student Hub</div>
+    <h1>Everything happening on campus.</h1>
+    <p>News, announcements, events, campus media, and the student marketplace all in one spot. </p>
+  </div>
+</header>
+
+<main>
+  <div class="hub-section">
+    <div class="wrap">
+      <div id="announce-banner-slot"></div>
+    </div>
+  </div>
+
+  <div class="hub-section tint">
+    <div class="wrap">
+      <div class="section-heading">
+        <h2>Latest news</h2>
+        <a href="news.html" class="see-all">See all →</a>
+      </div>
+      <div class="feed" id="news-teaser"></div>
+      <div class="empty" id="news-empty" style="display:none;"><div class="glyph">📰</div><p>No news posted yet.</p></div>
+    </div>
+  </div>
+
+  <div class="hub-section">
+    <div class="wrap">
+      <div class="section-heading">
+        <h2>Upcoming events</h2>
+        <a href="events.html" class="see-all">See all →</a>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px;" id="events-teaser"></div>
+      <div class="empty" id="events-empty" style="display:none;"><div class="glyph">📅</div><p>No upcoming events right now.</p></div>
+    </div>
+  </div>
+
+  <div class="hub-section tint">
+    <div class="wrap">
+      <div class="section-heading">
+        <h2>Campus media</h2>
+        <a href="media.html" class="see-all">See all →</a>
+      </div>
+      <div class="media-grid" id="media-teaser"></div>
+      <div class="empty" id="media-empty" style="display:none;"><div class="glyph">📸</div><p>No photos shared yet.</p></div>
+    </div>
+  </div>
+
+  <div class="hub-section">
+    <div class="wrap">
+      <div class="section-heading">
+        <h2>From the market</h2>
+        <a href="market.html" class="see-all">See all →</a>
+      </div>
+      <div class="teaser-strip" id="market-teaser"></div>
+      <div class="empty" id="market-empty" style="display:none;"><div class="glyph">🛍️</div><p>No listings posted yet.</p></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+  <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav();
+  initTopNav();
+
+  SM.listenPosts('announcement', (posts) => {
+    const slot = document.getElementById('announce-banner-slot');
+    const pinned = posts.filter(p => p.pinned).slice(0, 3);
+    const shown = pinned.length ? pinned : posts.slice(0, 1);
+    if (!shown.length){ slot.innerHTML = ''; return; }
+    slot.innerHTML = `
+      <div class="announce-banner">
+        <span class="pin-icon">📣</span>
+        <div class="announce-body">
+          <div class="announce-list">
+            ${shown.map(p => `
+              <a href="article.html?id=${p.id}" class="announce-item">
+                <div>
+                  <div class="announce-title">${p.title}</div>
+                  <div class="announce-text">${(p.body || '').slice(0, 110)}${(p.body||'').length > 110 ? '…' : ''}</div>
+                </div>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+      </div>`;
+  });
+
+  SM.listenPosts('news', (posts) => {
+    const grid = document.getElementById('news-teaser');
+    const empty = document.getElementById('news-empty');
+    const items = posts.slice(0, 3);
+    if (!items.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = items.map(p => `
+      <a class="card post-card" href="article.html?id=${p.id}">
+        <div class="thumb">
+          ${p.imageUrl ? `<img src="${p.imageUrl}" alt="">` : '📰'}
+          <span class="type-badge news">News</span>
+        </div>
+        <div class="body">
+          <h3>${p.title}</h3>
+          <p class="excerpt">${p.body || ''}</p>
+          <div class="meta"><span>${SM.timeAgo(p.createdAt)}</span></div>
+        </div>
+      </a>`).join('');
+  });
+
+  SM.listenUpcomingEvents((events) => {
+    const wrap = document.getElementById('events-teaser');
+    const empty = document.getElementById('events-empty');
+    const items = events.slice(0, 3);
+    if (!items.length){ wrap.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    wrap.innerHTML = items.map(renderEventCard).join('');
+    wireRsvpButtons();
+  });
+
+  function renderEventCard(e){
+    const d = new Date(e.eventDate);
+    const month = d.toLocaleDateString('en-US', { month: 'short' });
+    const day = d.getDate();
+    return `
+      <div class="event-card">
+        <div class="event-date-badge"><div class="month">${month}</div><div class="day">${day}</div></div>
+        <div class="event-body">
+          <a href="article.html?id=${e.id}"><h3>${e.title}</h3></a>
+          <div class="event-meta">
+            <span>🕒 ${d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+            ${e.eventLocation ? `<span>📍 ${e.eventLocation}</span>` : ''}
+            <span>👥 ${e.rsvpCount} going</span>
+          </div>
+          <button class="rsvp-btn ${e.iAmGoing ? 'going' : ''}" data-id="${e.id}" data-going="${e.iAmGoing}">${e.iAmGoing ? "✓ You're going" : "I'm going"}</button>
+        </div>
+      </div>`;
+  }
+
+  function wireRsvpButtons(){
+    document.querySelectorAll('.rsvp-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const user = SM.currentUser();
+        if (!user){ SM.redirectToAuth(); return; }
+        btn.disabled = true;
+        try{
+          await SM.toggleRsvp(btn.dataset.id, user.id, btn.dataset.going === 'true');
+        }catch(err){
+          SM.toast(err.message || 'Could not update RSVP', true);
+        }
+        btn.disabled = false;
+      });
+    });
+  }
+
+  SM.listenPosts('media', (posts) => {
+    const grid = document.getElementById('media-teaser');
+    const empty = document.getElementById('media-empty');
+    const items = posts.slice(0, 8);
+    if (!items.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = items.map(p => `
+      <a class="media-tile" href="article.html?id=${p.id}">
+        ${p.imageUrl ? `<img src="${p.imageUrl}" alt="">` : '📸'}
+        <span class="media-caption">${p.title}</span>
+      </a>`).join('');
+  });
+
+  SM.listenListings((listings) => {
+    const grid = document.getElementById('market-teaser');
+    const empty = document.getElementById('market-empty');
+    const items = listings.filter(l => l.status !== 'sold').slice(0, 3);
+    if (!items.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = items.map(l => `
+      <a class="card" href="listing.html?id=${l.id}">
+        <div class="thumb">
+          ${l.imageUrl ? `<img src="${l.imageUrl}" alt="">` : (l.glyph || '🛍️')}
+          <span class="tag">${SM.money(l.price)}</span>
+        </div>
+        <div class="body">
+          <span class="cat">${l.category}</span>
+          <h3>${l.title}</h3>
+          <div class="meta"><span>${SM.timeAgo(l.createdAt)}</span></div>
+        </div>
+      </a>`).join('');
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

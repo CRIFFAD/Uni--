@@ -1,0 +1,17 @@
+{
+  "name": "Uni𝕏",
+  "short_name": "Summit Hub",
+  "description": "News, announcements, events, campus media, and the student marketplace.",
+  "start_url": "index.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F3D26",
+  "icons": [
+    { "src": "assets/iconn-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/iconn-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/iconn-192-maskable.png", "sizes": "192x192", "type": "", "purpose": "maskable" },
+    { "src": "assets/iconn-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

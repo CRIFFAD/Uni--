@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your profile — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="profile-wrap wrap">
+  <h1 style="font-size:1.6rem; margin-bottom:20px; text-align:center;">Your profile</h1>
+
+  <div class="avatar-editor">
+    <div class="avatar-preview" id="avatar-preview">?</div>
+    <input type="file" id="avatar-input" accept="image/*">
+    <div style="text-align:center;">
+      <span class="role-badge" id="role-badge" style="display:none;"></span>
+    </div>
+  </div>
+
+  <form id="profile-form" class="panel">
+    <div class="field">
+      <label for="name">Full name</label>
+      <input type="text" id="name" required>
+    </div>
+    <div class="field">
+      <label for="dept">Department</label>
+      <input type="text" id="dept" placeholder="e.g. Computer Science">
+    </div>
+    <div class="field">
+      <label for="bio">Bio</label>
+      <textarea id="bio" placeholder="A line about yourself..."></textarea>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="text" id="email" disabled style="opacity:0.6;">
+      <div class="hint">Email can't be changed here.</div>
+    </div>
+
+    <div class="field error" id="profile-error" style="display:none;"></div>
+    <button type="submit" class="btn btn-primary btn-block" id="profile-submit">Save changes</button>
+  </form>
+
+  <button class="btn btn-outline clay btn-block" id="logout-btn" style="margin-top:14px;">Log out</button>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a students, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  import { compressImage } from './js/image-utils.js';
+
+  renderNav();
+  initTopNav();
+
+  let user = null;
+  let pendingAvatarFile = null;
+
+  function renderAvatarPreview(u){
+    const el = document.getElementById('avatar-preview');
+    el.innerHTML = u.avatarUrl ? `<img src="${u.avatarUrl}" alt="">` : u.initials;
+  }
+
+  SM.onAuthChange((u) => {
+    if (!u){ SM.redirectToAuth(); return; }
+    user = u;
+    document.getElementById('name').value = u.name;
+    document.getElementById('dept').value = u.dept || '';
+    document.getElementById('bio').value = u.bio || '';
+    document.getElementById('email').value = u.email;
+    renderAvatarPreview(u);
+
+    const roleBadge = document.getElementById('role-badge');
+    if (u.role && u.role !== 'student'){
+      roleBadge.textContent = u.role;
+      roleBadge.style.display = 'inline-block';
+    }
+  });
+
+  document.getElementById('avatar-input').addEventListener('change', () => {
+    const file = document.getElementById('avatar-input').files[0];
+    if (!file) return;
+    pendingAvatarFile = file;
+    document.getElementById('avatar-preview').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+  });
+
+  document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    const errEl = document.getElementById('profile-error');
+    errEl.style.display = 'none';
+    const btn = document.getElementById('profile-submit');
+    btn.disabled = true;
+
+    try{
+      let avatarFile = pendingAvatarFile;
+      if (avatarFile){
+        btn.textContent = 'Compressing photo…';
+        avatarFile = await compressImage(avatarFile, { maxDimension: 800 });
+      }
+
+      btn.textContent = 'Saving…';
+      await SM.updateProfile({
+        name: document.getElementById('name').value.trim(),
+        dept: document.getElementById('dept').value.trim(),
+        bio: document.getElementById('bio').value.trim(),
+        avatarFile
+      });
+
+      pendingAvatarFile = null;
+      SM.toast('Profile updated');
+      btn.disabled = false; btn.textContent = 'Save changes';
+    }catch(err){
+      errEl.textContent = err.message || 'Could not save changes — please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Save changes';
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    if (confirm('Log out of Summit Hub?')){
+      await SM.logOut();
+      window.location.href = 'index.html';
+    }
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post a listing — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="Uni𝕏 logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html" class="active">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html" class="active">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<main class="post-wrap wrap">
+  <h1 style="font-size:1.7rem; margin-bottom:6px;">Put something up on the board</h1>
+  <p style="color:var(--text-dim); font-size:0.9rem; margin-bottom:24px;">Takes less than a minute. Be honest about condition. it builds trust for your next post too.</p>
+
+  <form id="post-form" class="chalkboard">
+    <div class="field">
+      <label for="title">What are you selling?</label>
+      <input type="text" id="title" placeholder="e.g. Casio calculator, barely used" required>
+    </div>
+
+    <div class="field">
+      <label for="category">Category</label>
+      <select id="category" required></select>
+    </div>
+
+    <div class="field">
+      <label for="price">Price (₦)</label>
+      <input type="number" id="price" min="0" placeholder="e.g. 3500" required>
+    </div>
+
+    <div class="field">
+      <label for="desc">Description</label>
+      <textarea id="desc" placeholder="Condition, why you're selling, pickup details..." required></textarea>
+      <div class="hint">Buyers message you directly, so mention anything they'd want to know upfront.</div>
+    </div>
+
+    <div class="field">
+      <label for="photo">Photo (optional)</label>
+      <input type="file" id="photo" accept="image/*">
+      <img id="photo-preview" class="photo-preview">
+      <div class="hint">If you skip this, a simple icon is used instead. Photos are automatically resized and compressed before upload.</div>
+    </div>
+
+    <div class="field">
+      <label>Cover icon</label>
+      <div class="glyph-picker" id="glyph-picker"></div>
+    </div>
+
+    <div class="field error" id="post-error" style="display:none;"></div>
+    <button type="submit" class="btn btn-primary btn-block" id="post-submit">Publish listing</button>
+  </form>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  import { compressImage } from './js/image-utils.js';
+
+  renderNav('market');
+  initTopNav();
+
+  let user = null;
+  SM.onAuthChange((u) => {
+    if (!u){ SM.redirectToAuth(); return; }
+    user = u;
+  });
+
+  const catSelect = document.getElementById('category');
+  catSelect.innerHTML = SM.CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  const glyphs = ['🛍️','💻','👟','📚','🍛','🧥','🎧','🧊','📷','🧴','🛏️','⚙️'];
+  let selectedGlyph = glyphs[0];
+  const picker = document.getElementById('glyph-picker');
+  picker.innerHTML = glyphs.map(g => `<button type="button" class="glyph-opt ${g===selectedGlyph?'active':''}" data-g="${g}">${g}</button>`).join('');
+  picker.querySelectorAll('.glyph-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedGlyph = btn.dataset.g;
+      picker.querySelectorAll('.glyph-opt').forEach(b => b.classList.toggle('active', b===btn));
+    });
+  });
+
+  const photoInput = document.getElementById('photo');
+  const preview = document.getElementById('photo-preview');
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    if (!file){ preview.style.display = 'none'; return; }
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  });
+
+  document.getElementById('post-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!user){ SM.redirectToAuth(); return; }
+    const errEl = document.getElementById('post-error');
+    errEl.style.display = 'none';
+    const btn = document.getElementById('post-submit');
+    btn.disabled = true;
+
+    try{
+      let imageFile = photoInput.files[0] || null;
+      if (imageFile){
+        btn.textContent = 'Compressing photo…';
+        imageFile = await compressImage(imageFile);
+      }
+
+      btn.textContent = 'Publishing…';
+      const listing = await SM.addListing({
+        title: document.getElementById('title').value.trim(),
+        category: catSelect.value,
+        price: Number(document.getElementById('price').value),
+        desc: document.getElementById('desc').value.trim(),
+        glyph: selectedGlyph,
+        imageFile
+      }, user.id);
+      SM.toast('Listing published');
+      window.location.href = `listing.html?id=${listing.id}`;
+    }catch(err){
+      errEl.textContent = err.message || 'Could not publish — please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Publish listing';
+    }
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

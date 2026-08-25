@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Events — Uni𝕏</title>
+<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D26">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uni𝕏">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="UniHub logo">Uni𝕏<span class="dot"></span></a>
+    <div class="nav-right">
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="news.html">News</a>
+        <a href="events.html" class="active">Events</a>
+        <a href="media.html">Media</a>
+        <a href="market.html">Market</a>
+      </div>
+      <span id="nav-auth-slot" class="auth-slot"></span>
+      <button id="install-btn" title="Install Campus Hub">⬇</button>
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="events.html" class="active">Events</a>
+    <a href="media.html">Media</a>
+    <a href="market.html">Market</a>
+    <a href="dashboard.html">My listings</a>
+    <a href="profile.html">My profile</a>
+  </div>
+</nav>
+
+<header class="masthead home-hero">
+  <div class="wrap">
+    <div class="eyebrow">Campus Hub</div>
+    <h1>What's on campus</h1>
+    <p>Talks, socials, sports, and everything else worth showing up for.</p>
+  </div>
+</header>
+
+<main class="feed-section">
+  <div class="wrap">
+    <div class="feed-heading">
+      <h2 style="font-size:1.3rem;">Upcoming</h2>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px;" id="upcoming-list"></div>
+    <div class="empty" id="upcoming-empty" style="display:none;">
+      <div class="glyph">📅</div>
+      <p>No upcoming events right now.</p>
+    </div>
+
+    <div class="feed-heading" style="margin-top:40px;">
+      <h2 style="font-size:1.3rem;">Past events</h2>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px;" id="past-list"></div>
+    <div class="empty" id="past-empty" style="display:none;">
+      <div class="glyph">🗓️</div>
+      <p>No past events on record.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Uni𝕏 — built by a student, for students.</span>
+    <span>CRIFIX MEDIA</span>
+  </div>
+</footer>
+
+<script type="module" src="js/supabase-config.js"></script>
+<script type="module" src="js/r2-config.js"></script>
+<script type="module" src="js/supabase.js"></script>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/notifications.js"></script>
+<script type="module">
+  renderNav();
+  initTopNav();
+
+  function renderEventCard(e, interactive){
+    const d = new Date(e.eventDate);
+    const month = d.toLocaleDateString('en-US', { month: 'short' });
+    const day = d.getDate();
+    return `
+      <div class="event-card" style="${interactive ? '' : 'opacity:0.7;'}">
+        <div class="event-date-badge"><div class="month">${month}</div><div class="day">${day}</div></div>
+        <div class="event-body">
+          <a href="article.html?id=${e.id}"><h3>${e.title}</h3></a>
+          <div class="event-meta">
+            <span>🕒 ${d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+            ${e.eventLocation ? `<span>📍 ${e.eventLocation}</span>` : ''}
+            ${interactive ? `<span>👥 ${e.rsvpCount} going</span>` : ''}
+          </div>
+          ${interactive ? `<button class="rsvp-btn ${e.iAmGoing ? 'going' : ''}" data-id="${e.id}" data-going="${e.iAmGoing}">${e.iAmGoing ? "✓ You're going" : "I'm going"}</button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function wireRsvpButtons(){
+    document.querySelectorAll('.rsvp-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const user = SM.currentUser();
+        if (!user){ SM.redirectToAuth(); return; }
+        btn.disabled = true;
+        try{
+          await SM.toggleRsvp(btn.dataset.id, user.id, btn.dataset.going === 'true');
+        }catch(err){
+          SM.toast(err.message || 'Could not update RSVP', true);
+        }
+        btn.disabled = false;
+      });
+    });
+  }
+
+  SM.listenUpcomingEvents((events) => {
+    const wrap = document.getElementById('upcoming-list');
+    const empty = document.getElementById('upcoming-empty');
+    if (!events.length){ wrap.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    wrap.innerHTML = events.map(e => renderEventCard(e, true)).join('');
+    wireRsvpButtons();
+  });
+
+  SM.listenPosts('event', (posts) => {
+    const now = Date.now();
+    const past = posts.filter(p => p.eventDate && new Date(p.eventDate).getTime() < now)
+      .sort((a,b) => new Date(b.eventDate) - new Date(a.eventDate));
+    const wrap = document.getElementById('past-list');
+    const empty = document.getElementById('past-empty');
+    if (!past.length){ wrap.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    wrap.innerHTML = past.map(e => renderEventCard(e, false)).join('');
+  });
+</script>
+<script src="js/pwa.js"></script>
+</body>
+</html>
