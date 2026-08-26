@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Uni𝕏 ✹ News, Events, and the Campus Market</title>
-<link rel="icon" href="./assets/new-logo_2-removebg-preview.png">
+<title>Uni𝕏 — news, events, and the campus market</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0F3D26">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -13,12 +13,90 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Uni𝕏">
 <link rel="stylesheet" href="css/style.css">
+
+<style>
+  /* ============================================================
+     Splash / loading animation — scoped to this page only, so it
+     doesn't touch the shared stylesheet. Sits over everything
+     while the page's first paint + a minimum display time settle,
+     then fades away to reveal the real Home page underneath.
+     ============================================================ */
+  #splash-screen{
+    position:fixed; inset:0; z-index:9999;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(124,179,66,0.18), transparent 60%),
+      #0F3D26;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  #splash-screen.splash-hide{
+    opacity:0; transform:scale(1.04); pointer-events:none;
+  }
+  .splash-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .splash-logo-wrap{
+    width:112px; height:112px; border-radius:26px; overflow:hidden;
+    box-shadow:0 12px 40px -8px rgba(0,0,0,0.5);
+    animation:splash-pop .7s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .splash-logo-wrap img{ width:100%; height:100%; display:block; }
+  @keyframes splash-pop{
+    0%{ transform:scale(.6); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .splash-name{
+    font-family:'Fraunces',serif; font-weight:700; font-size:1.6rem; color:#fff;
+    letter-spacing:-0.01em; opacity:0; animation:splash-fade-up .6s ease .25s forwards;
+  }
+  .splash-name .x-accent{ color:#7CB342; }
+  .splash-tagline{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:rgba(255,255,255,0.55);
+    letter-spacing:0.08em; text-transform:uppercase; opacity:0; animation:splash-fade-up .6s ease .4s forwards;
+  }
+  .splash-bar{
+    width:120px; height:3px; border-radius:100px; background:rgba(255,255,255,0.15);
+    overflow:hidden; opacity:0; animation:splash-fade-up .6s ease .5s forwards;
+  }
+  .splash-bar-fill{
+    height:100%; width:0%; border-radius:100px;
+    background:linear-gradient(90deg, #7CB342, #D9A441);
+    animation:splash-fill 1.3s cubic-bezier(.4,0,.2,1) .5s forwards;
+  }
+  @keyframes splash-fade-up{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes splash-fill{
+    from{ width:0%; }
+    to{ width:100%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #splash-screen, .splash-logo-wrap, .splash-name, .splash-tagline, .splash-bar, .splash-bar-fill{
+      animation:none !important; transition:opacity .3s ease !important;
+    }
+    .splash-name, .splash-tagline, .splash-bar{ opacity:1; }
+    .splash-bar-fill{ width:100%; }
+  }
+
+  /* Brand logo on this page uses the new rounded-square mark, not the old circular badge style */
+  .brand img.unix-mark{
+    height:32px; width:32px; border-radius:22%; background:none; padding:0; flex-shrink:0;
+  }
+</style>
 </head>
 <body>
 
+<div id="splash-screen">
+  <div class="splash-inner">
+    <div class="splash-logo-wrap"><img src="assets/logo.svg" alt="Uni𝕏"></div>
+    <div class="splash-name">Uni<span class="x-accent">𝕏</span></div>
+    <div class="splash-tagline">Your campus, in one place</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  </div>
+</div>
+
 <nav class="topnav">
   <div class="wrap">
-    <a href="index.html" class="brand"><img src="./assets/new-logo_2-removebg-preview.png" alt="UniHub logo">Uni𝕏<span class="dot"></span></a>
+    <a href="index.html" class="brand"><img src="assets/logo.svg" alt="Uni𝕏 logo" class="unix-mark">Uni<span class="dot">𝕏</span></a>
     <div class="nav-right">
       <div class="navlinks">
         <a href="index.html" class="active">Home</a>
@@ -45,9 +123,9 @@
 
 <header class="masthead home-hero">
   <div class="wrap">
-    <div class="eyebrow">Student Hub</div>
-    <h1>Everything happening on campus.</h1>
-    <p>News, announcements, events, campus media, and the student marketplace all in one spot. </p>
+    <div class="eyebrow">Summit University · Student Hub</div>
+    <h1>Everything happening on campus, in one place.</h1>
+    <p>News, announcements, events, campus media, and the student marketplace — all in one spot, built for Summit University students.</p>
   </div>
 </header>
 
@@ -105,8 +183,8 @@
 
 <footer>
   <div class="wrap">
-  <span>Uni𝕏 — built by a student, for students.</span>
-    <span>CRIFIX MEDIA</span>
+    <span>Uni𝕏 — built by students, for students.</span>
+    <span>Summit University, Offa</span>
   </div>
 </footer>
 
@@ -239,6 +317,34 @@
         </div>
       </a>`).join('');
   });
+
+  /* ---- splash screen dismissal ----
+     Stays up for at least SPLASH_MIN ms (so the animation is always
+     fully perceptible, even on a fast connection/cache hit), and
+     waits for the page's load event too (so it never hides behind
+     an unfinished layout on a slow connection). Whichever finishes
+     last wins. */
+  const SPLASH_MIN = 1400;
+  const splashStart = performance.now();
+
+  function dismissSplash(){
+    const elapsed = performance.now() - splashStart;
+    const wait = Math.max(0, SPLASH_MIN - elapsed);
+    setTimeout(() => {
+      const splash = document.getElementById('splash-screen');
+      if (!splash) return;
+      splash.classList.add('splash-hide');
+      splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+      // Safety net in case transitionend never fires for some reason
+      setTimeout(() => splash.remove(), 900);
+    }, wait);
+  }
+
+  if (document.readyState === 'complete'){
+    dismissSplash();
+  } else {
+    window.addEventListener('load', dismissSplash);
+  }
 </script>
 <script src="js/pwa.js"></script>
 </body>

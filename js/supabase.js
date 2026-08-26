@@ -225,23 +225,18 @@ async function uploadToR2(file){
   const token = await currentAccessToken();
   if (!token) throw new Error('You need to be logged in to upload a photo.');
 
-  let res;
-  try{
-    res = await fetch(`${R2_WORKER_URL}/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': file.type || 'application/octet-stream',
-        'X-File-Name': file.name
-      },
-      body: file
-    });
-  }catch(networkErr){
-    throw new Error(`Network error reaching ${R2_WORKER_URL}: ${networkErr.message}`);
-  }
+  const res = await fetch(`${R2_WORKER_URL}/upload`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': file.type || 'application/octet-stream',
+      'X-File-Name': file.name
+    },
+    body: file
+  });
   if (!res.ok){
     if (res.status === 401) throw new Error('Your session expired — please log in again.');
-    throw new Error(`Upload failed with status ${res.status}.`);
+    throw new Error('Photo upload failed. Check that the Worker URL in js/r2-config.js is correct.');
   }
   return res.json();
 }
