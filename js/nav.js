@@ -58,3 +58,24 @@ window.initTopNav = function initTopNav(){
     });
   });
 };
+
+
+const popup = document.getElementById("imagePopup");
+const closePopup = document.getElementById("closePopup");
+
+// Show popup immediately after page loads
+window.addEventListener("load", () => {
+    popup.classList.add("show");
+});
+
+// Close popup
+closePopup.addEventListener("click", () => {
+    popup.classList.remove("show");
+});
+
+// Close when clicking outside the image
+popup.addEventListener("click", (event) => {
+    if (event.target === popup) {
+        popup.classList.remove("show");
+    }
+});

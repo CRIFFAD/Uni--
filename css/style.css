@@ -96,6 +96,108 @@ button{ font-family:inherit; cursor:pointer; }
 .mobile-menu a{ color:#fff; padding:14px 24px; font-size:0.95rem; border-bottom:1px solid rgba(255,255,255,0.08); }
 .mobile-menu a.active{ color:var(--leaf); font-weight:600; }
 
+/* update coming soon banner */
+/* .update-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: fit-content;
+    margin: 8px auto;
+    padding: 7px 14px;
+    background: #0f3d26;
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.update-dot {
+    width: 7px;
+    height: 7px;
+    background: #7cff9b;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(1.4);
+    }
+} */
+
+
+/* Popup background */
+.popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 9999;
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Show popup */
+.popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Popup content */
+.popup-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+}
+
+/* Image */
+.popup-content img {
+    display: block;
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 12px;
+}
+
+/* Close button */
+.close-btn {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+
+    width: 40px;
+    height: 40px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: white;
+    color: black;
+
+    font-size: 28px;
+    line-height: 40px;
+
+    cursor: pointer;
+
+    z-index: 2;
+}
+
+.close-btn:hover {
+    background: #eee;
+}
+
 /* ============================================================
    Hero / masthead
    ============================================================ */
