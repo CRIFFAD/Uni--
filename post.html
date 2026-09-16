@@ -106,9 +106,22 @@
 
   let user = null;
   SM.onAuthChange((u) => {
-    if (!u){ SM.redirectToAuth(); return; }
-    user = u;
-  });
+  if (!u){ SM.redirectToAuth(); return; }
+  user = u;
+
+  const canSell = u.role === 'vendor' || u.role === 'staff' || u.role === 'admin';
+  if (!canSell){
+    document.getElementById('post-form').style.display = 'none';
+    const notice = document.createElement('div');
+    notice.className = 'empty';
+    notice.innerHTML = `
+      <div class="glyph">🔒</div>
+      <p>Only approved vendors can post listings. Reach out to Uni𝕏 staff to become one.</p>
+      <a href="market.html" class="btn btn-outline" style="margin-top:12px;">Back to the market</a>
+    `;
+    document.getElementById('post-form').after(notice);
+  }
+});
 
   const catSelect = document.getElementById('category');
   catSelect.innerHTML = SM.CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -165,6 +178,11 @@
       btn.disabled = false; btn.textContent = 'Publish listing';
     }
   });
+
+
+// promote/demote vendor SQL
+//   update public.profiles set role = 'vendor' where email = 'someone@summit.edu.ng';
+// update public.profiles set role = 'student' where email = 'someone@summit.edu.ng';
 </script>
 <script src="js/pwa.js"></script>
 </body>
