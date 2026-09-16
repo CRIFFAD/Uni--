@@ -18,10 +18,24 @@ function mapListing(row){
   return row ? { ...row, sellerId: row.seller_id, desc: row.description, imageUrl: row.image_url, imageKey: row.image_key, createdAt: row.created_at } : null;
 }
 function mapThread(row){
-  return row ? { ...row, listingId: row.listing_id, listingTitle: row.listing_title, buyerId: row.buyer_id, sellerId: row.seller_id, lastMessage: row.last_message, updatedAt: row.updated_at } : null;
+  return row ? {
+    ...row,
+    userAId: row.user_a_id,
+    userBId: row.user_b_id,
+    contextListingId: row.context_listing_id,
+    contextListingTitle: row.context_listing_title,
+    lastMessage: row.last_message,
+    updatedAt: row.updated_at
+  } : null;
 }
 function mapMessage(row){
-  return row ? { ...row, from: row.from_user, ts: row.ts } : null;
+  return row ? {
+    ...row,
+    from: row.from_user,
+    ts: row.ts,
+    listingId: row.listing_id,
+    listingTitle: row.listing_title
+  } : null;
 }
 function mapProfile(row){
   return row ? {
@@ -296,7 +310,7 @@ async function getUser(id){ return loadProfile(id); }
 function listenThreads(userId, callback){
   async function refetch(){
     const { data } = await supabase.from('threads').select('*')
-      .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
       .order('updated_at', { ascending: false });
     callback((data || []).map(mapThread));
   }
@@ -307,12 +321,23 @@ function listenThreads(userId, callback){
   return () => supabase.removeChannel(channel);
 }
 
-async function getOrCreateThread(listingId, listingTitle, buyerId, sellerId){
+// listingId/listingTitle here are just the context the chat was started
+// from (e.g. the listing page the buyer clicked "message seller" on).
+// myId/otherId are the two participants — a single thread is shared by
+// this pair of people regardless of which listing prompted it.
+async function getOrCreateThread(listingId, listingTitle, myId, otherId){
+  const userAId = myId < otherId ? myId : otherId;
+  const userBId = myId < otherId ? otherId : myId;
+
   const { data: existing } = await supabase.from('threads').select('*')
-    .eq('listing_id', listingId).eq('buyer_id', buyerId).maybeSingle();
+    .eq('user_a_id', userAId).eq('user_b_id', userBId).maybeSingle();
   if (existing) return mapThread(existing);
 
-  const record = { listing_id: listingId, listing_title: listingTitle, buyer_id: buyerId, seller_id: sellerId, last_message: '' };
+  const record = {
+    user_a_id: userAId, user_b_id: userBId,
+    context_listing_id: listingId, context_listing_title: listingTitle,
+    last_message: ''
+  };
   const { data, error } = await supabase.from('threads').insert(record).select().single();
   if (error) throw error;
   return mapThread(data);
@@ -336,10 +361,38 @@ function listenMessages(threadId, callback){
   return () => supabase.removeChannel(channel);
 }
 
-async function sendMessage(threadId, from, text){
-  const { error } = await supabase.from('messages').insert({ thread_id: threadId, from_user: from, text });
+async function sendMessage(threadId, from, text, listingId, listingTitle){
+  const { error } = await supabase.from('messages').insert({
+    thread_id: threadId, from_user: from, text,
+    listing_id: listingId || null, listing_title: listingTitle || null
+  });
   if (error) throw error;
   await supabase.from('threads').update({ last_message: text, updated_at: new Date().toISOString() }).eq('id', threadId);
+}
+
+// Typing indicator — ephemeral, so it uses Supabase Realtime's broadcast
+// feature directly rather than a database table. Nothing is persisted;
+// a "typing" event is just fanned out live to whoever else is in the
+// same thread's channel right now.
+function listenTyping(threadId, userId, onTyping){
+  const channel = supabase.channel('typing-in-' + threadId, {
+    config: { broadcast: { self: false } }
+  });
+
+  channel
+    .on('broadcast', { event: 'typing' }, (payload) => {
+      if (payload.payload?.userId !== userId) onTyping();
+    })
+    .subscribe();
+
+  return {
+    sendTyping(){
+      channel.send({ type: 'broadcast', event: 'typing', payload: { userId } });
+    },
+    unsubscribe(){
+      supabase.removeChannel(channel);
+    }
+  };
 }
 
 /* ---------------- posts: news / announcements / events / media ---------------- */
@@ -479,7 +532,7 @@ const SM = {
   onAuthChange, currentUser, signUp, logIn, logOut, updateProfile,
   listenListings, listenListingsBySeller, getListing, addListing, updateListing, deleteListing,
   getUser,
-  listenThreads, getOrCreateThread, getThread, listenMessages, sendMessage,
+  listenThreads, getOrCreateThread, getThread, listenMessages, sendMessage, listenTyping,
   listenPosts, watchNewPosts, listenUpcomingEvents, getPost, addPost, deletePost, toggleRsvp, getRsvpInfo,
   money, timeAgo, toast, redirectToAuth
 };

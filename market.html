@@ -86,6 +86,10 @@
   renderNav('market');
   initTopNav();
 
+  SM.onAuthChange((user) => {
+  if (!user){ SM.redirectToAuth(); return; }
+});
+
   let activeCategory = 'All';
   let query = '';
   let allListings = [];

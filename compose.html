@@ -133,20 +133,23 @@
   }
 
   SM.onAuthChange((u) => {
-    if (!u){ SM.redirectToAuth(); return; }
-    user = u;
+  if (!u){ SM.redirectToAuth(); return; }
+  user = u;
 
-    const canPostOfficial = u.role === 'staff' || u.role === 'admin';
-    if (!canPostOfficial){
-      picker.querySelector('[data-type="news"]').style.display = 'none';
-      picker.querySelector('[data-type="announcement"]').style.display = 'none';
-      const notice = document.createElement('p');
-      // notice.style.cssText = 'font-size:0.8rem; color:var(--text-dim); margin:-14px 0 22px;';
-      // notice.textContent = 'News and Announcements can only be posted by Uni𝕏 staff accounts.';
-      // picker.after(notice);
-      selectType('event');
-    }
-  });
+  const canPostOfficial = u.role === 'staff' || u.role === 'admin';
+  if (!canPostOfficial){
+    document.getElementById('type-picker').style.display = 'none';
+    document.getElementById('compose-form').style.display = 'none';
+    const notice = document.createElement('div');
+    notice.className = 'empty';
+    notice.innerHTML = `
+      <div class="glyph">🔒</div>
+      <p>Posting is currently limited to Uni𝕏 staff, go to the "Market" to post a listing.</p>
+      <a href="index.html" class="btn btn-outline" style="margin-top:12px;">Back to Home</a>
+    `;
+    document.getElementById('type-picker').after(notice);
+  }
+});
 
   picker.querySelectorAll('.type-chip').forEach(chip => {
     chip.addEventListener('click', () => selectType(chip.dataset.type));

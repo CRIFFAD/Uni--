@@ -66,6 +66,10 @@
   renderNav('market');
   initTopNav();
 
+  SM.onAuthChange((user) => {
+  if (!user){ SM.redirectToAuth(); return; }
+});
+
   const id = new URLSearchParams(location.search).get('id');
   const root = document.getElementById('listing-root');
 
