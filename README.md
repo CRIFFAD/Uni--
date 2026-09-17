@@ -51,6 +51,10 @@ Demote back:
 ```sql
 update public.profiles set role = 'student' where email = 'someone@summit.edu.ng';
 ```
+```sql
+update public.profiles set role = 'vendor' where email = 'someone@summit.edu.ng';
+update public.profiles set role = 'student' where email = 'someone@summit.edu.ng';
+```
 No limit on how many staff accounts you can have — this is a one-line SQL command each time, no admin UI yet.
 
 ## Notifications — what they can and can't do
