@@ -97,7 +97,7 @@ button{ font-family:inherit; cursor:pointer; }
 .mobile-menu a.active{ color:var(--leaf); font-weight:600; }
 
 /* update coming soon banner */
-/* .update-banner {
+.update-banner {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,7 +130,7 @@ button{ font-family:inherit; cursor:pointer; }
         opacity: 0.4;
         transform: scale(1.4);
     }
-} */
+}
 
 
 /* Popup background */
