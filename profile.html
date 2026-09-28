@@ -29,18 +29,16 @@
       </div>
       <span id="nav-auth-slot" class="auth-slot"></span>
       <button id="install-btn" title="Install Uni𝕏">⬇</button>
-      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
     </div>
   </div>
-  <div class="mobile-menu" id="mobile-menu">
-    <a href="index.html">Home</a>
-    <a href="news.html">News</a>
-    <a href="events.html">Events</a>
-    <a href="media.html">Media</a>
-    <a href="market.html">Market</a>
-    <a href="dashboard.html">My listings</a>
-    <a href="profile.html">My profile</a>
-  </div>
+</nav>
+
+<nav class="bottom-tabbar">
+  <a href="index.html" class="tab-item"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></a>
+  <a href="news.html" class="tab-item"><span class="tab-icon">📰</span><span class="tab-label">News</span></a>
+  <a href="events.html" class="tab-item"><span class="tab-icon">📅</span><span class="tab-label">Events</span></a>
+  <a href="media.html" class="tab-item"><span class="tab-icon">📸</span><span class="tab-label">Media</span></a>
+  <a href="market.html" class="tab-item"><span class="tab-icon">🛍️</span><span class="tab-label">Market</span></a>
 </nav>
 
 <main class="profile-wrap wrap">
@@ -77,6 +75,7 @@
     <button type="submit" class="btn btn-primary btn-block" id="profile-submit">Save changes</button>
   </form>
 
+  <a href="dashboard.html" class="btn btn-outline btn-block" style="margin-top:14px;">My listings</a>
   <button class="btn btn-outline clay btn-block" id="logout-btn" style="margin-top:14px;">Log out</button>
 </main>
 
@@ -163,7 +162,7 @@
   });
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
-    if (confirm('Log out of Summit Hub?')){
+    if (confirm('Log out of Uni𝕏?')){
       await SM.logOut();
       window.location.href = 'index.html';
     }

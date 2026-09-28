@@ -1,5 +1,5 @@
 /* ============================================================
-   Summit Hub — live Supabase data layer.
+   Uni𝕏 — live Supabase data layer.
    Every page talks only to the SM.* functions exposed here.
    ============================================================ */
 
@@ -167,6 +167,22 @@ async function logIn({ email, password }){
 
 async function logOut(){
   await supabase.auth.signOut();
+}
+
+/* ---------------- password reset ---------------- */
+
+async function sendPasswordReset(email){
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password.html`
+  });
+
+  if (error) throw error;
+}
+
+async function updatePassword(password){
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) throw error;
 }
 
 async function updateProfile({ name, dept, bio, avatarFile }){
@@ -529,7 +545,9 @@ function redirectToAuth(){ window.location.href = 'auth.html'; }
 
 const SM = {
   CATEGORIES,
-  onAuthChange, currentUser, signUp, logIn, logOut, updateProfile,
+  onAuthChange, currentUser, signUp, logIn, logOut,
+  sendPasswordReset, updatePassword,
+  updateProfile,
   listenListings, listenListingsBySeller, getListing, addListing, updateListing, deleteListing,
   getUser,
   listenThreads, getOrCreateThread, getThread, listenMessages, sendMessage, listenTyping,

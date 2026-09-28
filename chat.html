@@ -60,34 +60,32 @@
 
 <nav class="topnav">
   <div class="wrap">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Summit Hub logo">Uni𝕏<span class="dot"></span></a>
+    <a href="index.html" class="brand"><img src="assets/logo.svg" alt="Uni𝕏 logo" class="unix-mark">Uni<span class="dot">𝕏</span></a>
     <div class="nav-right">
       <div class="navlinks">
-        <a href="index.html">Home</a>
+        <a href="index.html" class="active">Home</a>
         <a href="news.html">News</a>
         <a href="events.html">Events</a>
         <a href="media.html">Media</a>
-        <a href="market.html" class="active">Market</a>
+        <a href="market.html">Market</a>
       </div>
       <span id="nav-auth-slot" class="auth-slot"></span>
-      <button id="install-btn" title="Install Summit Hub">⬇</button>
-      <button class="hamburger" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+      <button id="install-btn" title="Install Uni𝕏">⬇</button>
     </div>
   </div>
-  <div class="mobile-menu" id="mobile-menu">
-    <a href="index.html">Home</a>
-    <a href="news.html">News</a>
-    <a href="events.html">Events</a>
-    <a href="media.html">Media</a>
-    <a href="market.html" class="active">Market</a>
-    <a href="dashboard.html">My listings</a>
-    <a href="profile.html">My profile</a>
-  </div>
+</nav>
+
+<nav class="bottom-tabbar">
+  <a href="index.html" class="tab-item active"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></a>
+  <a href="news.html" class="tab-item"><span class="tab-icon">📰</span><span class="tab-label">News</span></a>
+  <a href="events.html" class="tab-item"><span class="tab-icon">📅</span><span class="tab-label">Events</span></a>
+  <a href="media.html" class="tab-item"><span class="tab-icon">📸</span><span class="tab-label">Media</span></a>
+  <a href="market.html" class="tab-item"><span class="tab-icon">🛍️</span><span class="tab-label">Market</span></a>
 </nav>
 
 <main class="chat-shell">
   <div class="wrap">
-    <h1 style="font-size:1.4rem; margin-bottom:16px; height: 40px;">Messages</h1>
+    <h1 style="font-size:1.4rem; margin-bottom:16px; height: 30px;">Messages</h1>
     <div class="chat-grid">
       <div class="thread-list" id="thread-list"></div>
       <div class="conversation" id="conversation">

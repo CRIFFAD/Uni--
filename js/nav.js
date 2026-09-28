@@ -20,11 +20,23 @@ window.renderNav = function renderNav(context){
 
     const avatarInner = user.avatarUrl ? `<img src="${user.avatarUrl}" alt="">` : user.initials;
 
+    // Only show the "+" button to accounts actually allowed to post in
+    // this context. Plain students can't post anywhere anymore, so
+    // there's no reason to show them a button that just leads to a
+    // "you're not allowed to do this" message.
+    const canCreate = context === 'market'
+      ? ['vendor','staff','admin'].includes(user.role)
+      : ['staff','admin'].includes(user.role);
+
+    const createBtnHtml = canCreate
+      ? `<a href="${createHref}" class="pill-btn">+ <span class="btn-label">${createLabel}</span></a>`
+      : '';
+
     slot.innerHTML = `
       <a href="chat.html" class="chat-icon-link notif-badge" title="Messages">💬
         <span class="count" id="unread-count" style="display:none;"></span>
       </a>
-      <a href="${createHref}" class="pill-btn">+ <span class="btn-label">${createLabel}</span></a>
+      ${createBtnHtml}
       <a href="profile.html" class="avatar-btn" title="${user.name}">${avatarInner}</a>
     `;
 

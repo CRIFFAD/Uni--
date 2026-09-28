@@ -21,6 +21,7 @@
   --radius:14px;
   --shadow: 0 1px 2px rgba(15,61,38,0.07), 0 8px 20px -12px rgba(15,61,38,0.28);
   --nav-h:60px;
+  --tabbar-h:60px;
 }
 
 /* ============================================================
@@ -89,15 +90,24 @@ button{ font-family:inherit; cursor:pointer; }
 }
 #install-btn:hover{ background:rgba(255,255,255,0.18); }
 
-/* Hamburger */
-.hamburger{ display:none; background:none; border:none; color:#fff; font-size:1.35rem; width:36px; height:36px; align-items:center; justify-content:center; flex-shrink:0; padding:0; }
-.mobile-menu{ display:none; flex-direction:column; background:var(--ink-soft); border-top:1px solid rgba(255,255,255,0.12); }
-.mobile-menu.open{ display:flex; }
-.mobile-menu a{ color:#fff; padding:14px 24px; font-size:0.95rem; border-bottom:1px solid rgba(255,255,255,0.08); }
-.mobile-menu a.active{ color:var(--leaf); font-weight:600; }
+/* Bottom tab bar — replaces the hamburger/mobile-menu dropdown on mobile.
+   Hidden by default; shown only under the 860px breakpoint below. */
+.bottom-tabbar{
+  display:none; position:fixed; left:0; right:0; bottom:0; z-index:60;
+  background:var(--ink); border-top:3px solid var(--leaf);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+}
+.tab-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  padding:8px 4px; color:rgba(255,255,255,0.55); font-size:0.68rem; font-weight:600;
+  transition:transform .12s ease;
+}
+.tab-item:active{ transform:scale(.92); }
+.tab-item .tab-icon{ font-size:1.3rem; line-height:1; }
+.tab-item.active{ color:var(--leaf); }
 
 /* update coming soon banner */
-.update-banner {
+/* .update-banner {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,7 +140,7 @@ button{ font-family:inherit; cursor:pointer; }
         opacity: 0.4;
         transform: scale(1.4);
     }
-}
+} */
 
 
 /* Popup background */
@@ -498,7 +508,8 @@ select.status-select{ padding:8px 10px; border-radius:8px; border:1px solid var(
    ============================================================ */
 @media (max-width:860px){
   .navlinks{ display:none; }
-  .hamburger{ display:flex; }
+  .bottom-tabbar{ display:flex; }
+  body{ padding-bottom:var(--tabbar-h); }
   .listing-grid{ grid-template-columns:1fr; }
   .chat-grid{ grid-template-columns:1fr; height:auto; }
   .thread-list{ display:var(--list-display, block); border-right:none; }
@@ -516,7 +527,6 @@ select.status-select{ padding:8px 10px; border-radius:8px; border:1px solid var(
   .pill-btn{ padding:9px 12px; }
   .chat-icon-link{ width:34px; height:34px; font-size:0.95rem; }
   .avatar-btn{ width:32px; height:32px; font-size:0.75rem; }
-  .hamburger{ width:32px; height:32px; font-size:1.2rem; }
   #install-btn{ width:32px; height:32px; font-size:0.9rem; }
 
   .masthead{ padding:28px 0 24px; }
@@ -552,7 +562,7 @@ select.status-select{ padding:8px 10px; border-radius:8px; border:1px solid var(
   .chat-shell{ padding:0; }
   .chat-shell .wrap{ padding:0; }
   .chat-shell h1{ padding:16px 16px 12px; }
-  .chat-grid{ border-radius:0; border-left:none; border-right:none; height:calc(100vh - var(--nav-h) - 60px); min-height:420px; }
+  .chat-grid{ border-radius:0; border-left:none; border-right:none; height:calc(100vh - var(--nav-h) - 60px - var(--tabbar-h)); min-height:420px; }
   .conv-header .back-btn{ display:inline-block; }
   .conv-input input, .conv-input button{ padding-top:12px; padding-bottom:12px; }
 
@@ -583,5 +593,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; scroll-behavior:auto !important; } }
 @media (pointer:coarse){
   .chip, .btn, .pill-btn, button{ min-height:40px; }
-  .avatar-btn, .hamburger, .chat-icon-link, #install-btn{ min-width:36px; min-height:36px; }
+  .avatar-btn, .chat-icon-link, #install-btn{ min-width:36px; min-height:36px; }
+  .tab-item{ min-height:44px; }
 }
